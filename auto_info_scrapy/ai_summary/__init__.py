@@ -1,0 +1,8 @@
+"""
+该模块用于对抓取到的信息进行AI分析和总结
+也负责如利用论文摘要判断该论文是否属于理论性论文，并给出结构性的回答
+"""
+
+
+def do_summary_or_judge(data_dir: str,prompts: str):
+    pass
