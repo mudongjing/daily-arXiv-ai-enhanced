@@ -5,18 +5,19 @@
 from datetime import datetime, timedelta,time
 import arxiv
 import os
+import utils
 
 head = time(0,0,0 )
 tail = time(23,59,59)
 categories = ["cs.AI", "cs.CV","math.NT"]
 
 def scrapy_info(data_dir: str):
-    target_date = datetime.now().date() - timedelta(days=1)
+    target_date = utils.yesterday_date()
     # 在目录下创建以日期命名的jsonl文件    
-    json_file = os.path.join(data_dir, f"{target_date.strftime('%Y%m%d')}.jsonl")
+    json_file = os.path.join(data_dir, f"{utils.date_str(target_date)}.jsonl")
     
-    start = datetime.combine(target_date-timedelta(days=0), head).strftime("%Y%m%d%H%M%S")
-    end = datetime.combine(target_date, tail).strftime("%Y%m%d%H%M%S")
+    start = utils.datetime_str(datetime.combine(target_date, head))
+    end = utils.datetime_str(datetime.combine(target_date, tail))
     print(f"Scraping arXiv papers submitted between {start} and {end}")
     cat_query = " OR ".join([f"cat:{cat}" for cat in categories])
     query = f"({cat_query}) AND (submittedDate:[{start} TO {end}])"
