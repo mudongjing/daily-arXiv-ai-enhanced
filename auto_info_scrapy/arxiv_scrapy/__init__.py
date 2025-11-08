@@ -4,8 +4,10 @@
 最后，由AI对摘要总结几个关键词，作为论文的标签信息
 """
 
-import scrapy_info
+from . import scrapy_info
+from ai_summary.arxiv_ai_summary import arxiv_ai_summary
 
 def do_scrapy(data_dir: str):
-    scrapy_info(data_dir)
-    pass
+    # scrapy_info.scrapy_info(data_dir)
+    #     arxiv_ai_summary(data_dir)
+    arxiv_ai_summary(data_dir)

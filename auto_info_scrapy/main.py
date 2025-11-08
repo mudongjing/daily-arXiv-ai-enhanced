@@ -6,11 +6,11 @@
 from arxiv_scrapy import do_scrapy as do_arxiv_scrapy
 from tele_channel_scrapy import do_scrapy as do_tele_channel_scrapy
 import os
-data_dir = os.path.abspath('../info_data')
+data_dir = os.path.abspath('./info_data')
 
 def do_scrapy():    
     do_arxiv_scrapy(data_dir+'/arxiv_scrapy')
-    do_tele_channel_scrapy(data_dir+'/tele_channel_scrapy')
+    # do_tele_channel_scrapy(data_dir+'/tele_channel_scrapy')
 
 if __name__ == '__main__':
     do_scrapy()
