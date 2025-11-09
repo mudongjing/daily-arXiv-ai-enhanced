@@ -8,6 +8,6 @@ from . import scrapy_info
 from ai_summary.arxiv_ai_summary import arxiv_ai_summary
 
 def do_scrapy(data_dir: str):
-    # scrapy_info.scrapy_info(data_dir)
+    scrapy_info.scrapy_info(data_dir)
     #     arxiv_ai_summary(data_dir)
     arxiv_ai_summary(data_dir)

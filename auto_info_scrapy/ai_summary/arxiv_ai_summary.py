@@ -29,7 +29,7 @@ def do_loop(is_first:bool,info,data_dir: str)->int:
     lis = [x for x in lis if x.strip()!='']
     print('lis='+str(lis))
     # print(content)
-    target_file = os.path.join(data_dir, f"{utils.yesterday_date_str()}_ai_arxiv.jsonl")
+    target_file = os.path.join(data_dir, f"{utils.format_date(utils.yesterday_date())}_ai_arxiv.jsonl")
     sum = 0
     with open(target_file, 'w' if is_first else 'a') as f:
         l = len(lis)
@@ -49,7 +49,7 @@ def do_loop(is_first:bool,info,data_dir: str)->int:
     return sum
 
 def arxiv_ai_summary(data_dir: str):
-    source_file= os.path.join(data_dir, f"{utils.yesterday_date_str()}_arxiv.jsonl")
+    source_file= os.path.join(data_dir, f"{utils.format_date(utils.yesterday_date())}_arxiv.jsonl")
     
     # ai_messages = [{"role": "system", "content": "你作为一个作为一个学术能力很强的学者，对数学、计算机科学等领域有深入的研究和理解，下面我将给出arxiv网站上论文的摘要内容，你根据内容，首先判断该论文是否是纯理论性的主题，是则回答1,不是回答0，不要有多余的内容。然后给出具有学术性的简单明了的关键词，用逗号分隔，全部使用中文回答。判断与关键词的回答各占一行，中间不要有其他额外信息，所有回答之间也不要有额外信息。"}]
     sum = 0

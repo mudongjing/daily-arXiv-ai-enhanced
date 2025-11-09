@@ -15,7 +15,7 @@ categories = ["cs.AI", "cs.CV","math.NT","math.AC","math.AG"]
 def scrapy_info(data_dir: str) -> bool:
     target_date = utils.yesterday_date()
     # 在目录下创建以日期命名的jsonl文件    
-    json_file = os.path.join(data_dir, f"{utils.date_str(target_date)}_arxiv.jsonl")
+    json_file = os.path.join(data_dir, f"{utils.format_date(target_date)}_arxiv.jsonl")
     start = utils.datetime_str(datetime.combine(target_date-timedelta(days=1), head))
     end = utils.datetime_str(datetime.combine(target_date, tail))
     print(f"Scraping arXiv papers submitted between {start} and {end}")
