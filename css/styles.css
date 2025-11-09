@@ -363,6 +363,20 @@ header {
   overflow-y: hidden;
 }
 
+.keywords-scroll{
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  width: 100%;
+  justify-content: flex-start; /* 改为左对齐 */
+  flex-wrap: nowrap; /* 禁止换行 */
+  white-space: nowrap; /* 确保内容不会换行 */
+  /* 添加鼠标滚轮横向滚动支持 */
+  overflow-y: hidden;
+}
+
 .filter-scroll {
   display: flex;
   overflow-x: auto;
