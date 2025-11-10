@@ -1,7 +1,7 @@
 
 import * as arxiv from './main_cat_loader/arxiv.js';
-import * as my_enum from './main_cat_loader/common_enum.js';
-import * as common from './main_cat_loader/common_loader.js';
+import * as my_enum from './my_enum.js';
+import * as common from './main_cat_loader/common_carrier.js';
 async function countCategoriesAndKeywords(main_cat) {
     let result = new common.CountOfCategoriesAndKeywords();
     const response = await fetch(`data/${date}_ai_${main_cat}.jsonl`);

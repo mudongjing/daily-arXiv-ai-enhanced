@@ -363,7 +363,7 @@ header {
   overflow-y: hidden;
 }
 
-.keywords-scroll{
+.sub-category-scroll{
   display: flex;
   overflow-x: auto;
   gap: 10px;
