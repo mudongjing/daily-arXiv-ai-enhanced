@@ -1,8 +1,7 @@
 import * as fetcher from './utils/fetch.js';
-import * as initer from './utils/init.js';
-import * as loader from './utils/load.js';
-import * as renderer from './utils/render.js';
-import * as toggler from './utils/toggle.js';
+import * as initer from './workers/init.js';
+import * as loader from './workers/load_resource.js';
+import * as renderer from './workers/render_result.js';
 
 /**
  * 初始化事件监听器
@@ -31,16 +30,26 @@ import * as toggler from './utils/toggle.js';
  * 考虑到之后抓取新闻时，对应的数据量非常巨大，对内容的加载使用虚拟列表的方式，只加载当前可见区域的内容，避免一次性加载所有数据导致性能问题
  * 也导致搜索时，当前页面无法给出完整的搜索结果，需要在后台利用完整数据进行匹配，匹配完成后，将匹配的索引值存储在'matched_index'中，用于后续的渲染
  */
+var handlers = {};// 利用流水线模式，对不同阶段执行对应的函数
+handlers['init'] = {};
+initer.add_workers_with_data(handlers);
+handlers['load_resource'] = {};
+loader.add_workers_with_data(handlers);
+handlers['render_result']= {};
+renderer.add_workers_with_data(handlers);
+
+const handle_workers = function(worker_name){
+  var workers_with_data = handlers[worker_name];
+  if(workers_with_data){
+    var workers = workers_with_data['workers'];
+    workers.forEach(worker => worker(handlers));
+  }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
-  initer.initEventListeners();// 设置监听器
+  handle_workers('init');//初始化
   fetcher.fetchGitHubStats();
-  // // 加载用户关键词
-  // loadUserKeywords();
-  // // 加载用户作者
-  // loadUserAuthors();
-  fetcher.fetchAvailableDates().then(() => {
-    if (availableDates.length > 0) {
-      loader.loadPapersByDate(availableDates[0]);
-    }
-  });
+  handle_workers('load_resource');//加载资源
+  handle_workers('render_result');//渲染结果
 });
