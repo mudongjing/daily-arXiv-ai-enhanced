@@ -40,6 +40,7 @@ renderer.add_workers_with_data(handlers);
 
 handlers['global_data'] = {
   [const_key.force_refresh_key]: true,
+  [const_key.info_data_dir_key]: './info_data/',
 };
 
 const handle_workers = function(worker_name){
