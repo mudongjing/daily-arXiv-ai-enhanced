@@ -50,6 +50,30 @@
     </script>
 </head>
 <body>
+    <script>
+    document.addEventListener('plusready', () => { // 等待plus ready后再调用5+ API：
+      let first = null;
+      const webview = plus.webview.currentWebview()
+      plus.key.addEventListener('backbutton', () => {
+        webview.canBack((e) => {
+          if(e.canBack) {
+            webview.back()
+          } else { // 首次按键，提示‘再按一次退出应用’
+            if(!first) {
+              first = new Date().getTime() // 通过H5+ API 调用Android 上的toast 提示框
+              plus.nativeUI.toast('再按一次退出应用', { duration: 'short' })
+              setTimeout(() => { first = null }, 1000)
+            } else {
+              if(new Date().getTime() - first < 1000) {
+                plus.runtime.quit() // 退出应用 //
+                webview.close(); //hide,quit
+              }
+            }
+          }
+        })
+      })
+    })
+  </script>
     <div class="app-container">
         <header>
             <div class="header-content">

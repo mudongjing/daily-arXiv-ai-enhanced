@@ -2,7 +2,7 @@ import * as fetcher from './utils/fetch.js';
 import * as initer from './workers/init.js';
 import * as loader from './workers/load_resource.js';
 import * as renderer from './workers/render_result.js';
-
+import * as const_key from './workers/const_key.js';
 /**
  * 初始化事件监听器
  * 获取已有的主分类的选择，以及内部的子分类的选择。对其中的分类若不存在则使用默认值
@@ -37,6 +37,10 @@ handlers['load_resource'] = {};
 loader.add_workers_with_data(handlers);
 handlers['render_result']= {};
 renderer.add_workers_with_data(handlers);
+
+handlers['global_data'] = {
+  [const_key.force_refresh_key]: true,
+};
 
 const handle_workers = function(worker_name){
   var workers_with_data = handlers[worker_name];

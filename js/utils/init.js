@@ -1,11 +1,6 @@
 import * as toggler from './toggle.js';
 import * as filterer from './filter.js';
 
-export function add_workers_with_data(handlers){
-
-}
-
-
 
 export function initEventListeners() {
   // 日期选择器相关的事件监听
