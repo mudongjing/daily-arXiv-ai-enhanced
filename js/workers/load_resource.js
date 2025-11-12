@@ -5,10 +5,8 @@ const key = const_key.load_resource_key;
 
 export function add_workers_with_data(handlers){
     let workers = [];
-    handlers[key] = {
-        'data': {},
-        'workers': workers
-    }
+    handlers[key][const_key.data_key] = {};
+    handlers[key][const_key.workers_key] = workers;
     workers.push(load_main_category);
     workers.push(load_sub_category);
     workers.push(load_date_range);
@@ -118,7 +116,7 @@ async function read_info_file(info_key, date_str){
         if (!text || text.trim() === '') {
             return (source_data, author_index, category_index, keyword_index);
         }
-        source_data, author_index, category_index, keyword_index = parseJsonlData(text, date_str);
+        source_data, author_index, category_index, keyword_index = parseJsonlData(text);
     } catch (error) {
         // console.error(`Error loading file ${file_path}:`, error);
         return (source_data, author_index, category_index, keyword_index);
@@ -126,7 +124,7 @@ async function read_info_file(info_key, date_str){
     return (source_data, author_index, category_index, keyword_index);
 }
 
-function parseJsonlData(jsonlText, date) {
+function parseJsonlData(jsonlText) {
   let source_data = [];
   let author_index = {};
   let category_index = {};

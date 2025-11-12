@@ -1,4 +1,4 @@
-import * as fetcher from './utils/fetch.js';
+
 import * as initer from './workers/init.js';
 import * as loader from './workers/load_resource.js';
 import * as renderer from './workers/render_result.js';
@@ -31,17 +31,17 @@ import * as const_key from './workers/const_key.js';
  * 也导致搜索时，当前页面无法给出完整的搜索结果，需要在后台利用完整数据进行匹配，匹配完成后，将匹配的索引值存储在'matched_index'中，用于后续的渲染
  */
 var handlers = {};// 利用流水线模式，对不同阶段执行对应的函数
+handlers['global_data'] = {
+  [const_key.force_refresh_key]: true,
+  [const_key.info_data_dir_key]: './info_data/',
+};
+
 handlers['init'] = {};
 initer.add_workers_with_data(handlers);
 handlers['load_resource'] = {};
 loader.add_workers_with_data(handlers);
 handlers['render_result']= {};
 renderer.add_workers_with_data(handlers);
-
-handlers['global_data'] = {
-  [const_key.force_refresh_key]: true,
-  [const_key.info_data_dir_key]: './info_data/',
-};
 
 const handle_workers = function(worker_name){
   var workers_with_data = handlers[worker_name];

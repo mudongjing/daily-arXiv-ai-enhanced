@@ -1,7 +1,19 @@
 
+export const info_source_key = ['arxiv'] // 文章详情来源['arxiv', 'telegram','news']
+export const all_sign = 'all'; // 所有分类的标志
+
+
+// 局部数据键名
+export const date_index_arr_key = 'date_index_arr'; // 日期索引数组
+export const sub_category_index_dict_key = 'sub_category_index_dict'; // 次分类索引数组
+export const authors_index_dict_key = 'authors_index_dict'; // 作者索引数组
+export const keywords_index_dict_key = 'keyword_index_dict'; // 关键词索引数组
+export const query_result_index_dict_key = 'query_result_index_dict'; // 查询结果索引数组
+
+//全局数据键名
 export const global_data_key = 'global_data';
-export const current_date_key = 'current_date'; // 同时作为时间范围的开始日期
 export const flatpickrInstance_key = 'flatpickrInstance';
+export const current_date_key = 'current_date'; // 同时作为时间范围的开始日期
 export const current_papers_key = 'current_papers';
 export const current_paper_index_key = 'current_paper_index';
 export const active_keywords_key = 'active_keywords'; // 后台指定过滤的关键词
@@ -11,7 +23,6 @@ export const main_category_key = 'main_category'; // 后台指定过滤的主分
 export const sub_category_key = 'sub_category'; // 后台指定过滤的次分类
 export const end_date_key = 'end_date'; // 如果不为null，则作为时间范围的结束日期，否则表示当前为单一日期查询
 export const force_refresh_key = 'force_refresh'; // 指定是否强制刷新数据
-export const info_source_key = ['arxiv'] // 文章详情来源['arxiv', 'telegram','news']
 export const info_data_dir_key = 'info_data_dir'; // 文章详情数据目录
 
 // 阶段名

@@ -62,3 +62,12 @@ export function select_dates_to_remove(current_date, end_date,date_keys){
     return remove_keys;
 }
 
+export function get_date_range_arr(start_date,end_date){
+    let date_range_arr = [];
+    let current_date = new Date(start_date);
+    while(current_date <= end_date){
+        date_range_arr.push(format_date(current_date));
+        current_date = add_days(current_date, 1);
+    }
+    return date_range_arr;
+}
