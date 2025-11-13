@@ -9,6 +9,7 @@ export const sub_category_index_dict_key = 'sub_category_index_dict'; // 次分�
 export const authors_index_dict_key = 'authors_index_dict'; // 作者索引数组
 export const keywords_index_dict_key = 'keyword_index_dict'; // 关键词索引数组
 export const query_result_index_dict_key = 'query_result_index_dict'; // 查询结果索引数组
+export const is_query_key = 'is_query'; // 是否为查询
 
 //全局数据键名
 export const global_data_key = 'global_data';
@@ -24,6 +25,8 @@ export const sub_category_key = 'sub_category'; // 后台指定过滤的次分�
 export const end_date_key = 'end_date'; // 如果不为null，则作为时间范围的结束日期，否则表示当前为单一日期查询
 export const force_refresh_key = 'force_refresh'; // 指定是否强制刷新数据
 export const info_data_dir_key = 'info_data_dir'; // 文章详情数据目录
+export const is_fetch_complete_key = 'is_fetch_complete'; // 是否完成数据获取
+export const current_view_key = 'current_view'; // 当前视图
 
 // 阶段名
 export const load_resource_key = 'load_resource'; 

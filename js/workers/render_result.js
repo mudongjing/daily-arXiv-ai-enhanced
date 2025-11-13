@@ -32,7 +32,7 @@ function filter_main_category(handlers){
 
 function filter_date(handlers){
     let data = handlers[key][const_key.data_key];
-    let global_start_date = handlers[key][const_key.current_date_key];
+    let global_start_date = handlers[const_key.global_data_key][const_key.current_date_key];
     let global_end_date = handlers[const_key.global_data_key][const_key.end_date_key];
     if(data[const_key.force_refresh_key] || data[const_key.current_date_key] !== global_start_date || data[const_key.end_date_key] !== global_end_date){
         data[const_key.force_refresh_key] = true;
@@ -55,6 +55,7 @@ function filter_sub_category(handlers){
         let now_sub_category = data[const_key.sub_category_key];
         const now_main_category = data[const_key.main_category_key];
         const date_index_arr = data[const_key.date_index_arr_key];
+        
         const source_data = handlers[const_key.load_resource_key][const_key.data_key][now_main_category];
         if(now_sub_category===const_key.all_sign){
             data[const_key.sub_category_index_dict_key] = date_index_arr.reduce((dict, date) => {
@@ -130,8 +131,10 @@ function filter_author(handlers){
 function search_query(handlers){
     let data = handlers[key][const_key.data_key];
     let query = handlers[const_key.global_data_key][const_key.text_search_query_key];
+    const index_dict = data[const_key.authors_index_dict_key];
+    const now_sub_category = data[const_key.sub_category_key];
     if (!query || query.trim() === ''){
-        data[const_key.search_result_key] = deep_clone(data[const_key.authors_index_dict_key]);
+        data[const_key.search_result_key] = deep_clone(index_dict);
     } else{
         let query_parts = query.split('&&');
         let title_or_summary_query = [];
@@ -164,27 +167,142 @@ function search_query(handlers){
                 }
             }
         }
+        
+        // 如果上述查询内容为空，或者查询的子类与当前活跃的相同，则不执行实际搜索，直接复制原有的索引字典
+        // 利用现有的索引字典，按日期逐个,先获取原始的索引列表，与对应的查询的作者的索引列表取交集，得到新的索引列表，如果作者不要求查询，则使用原始索引列表
+        // 类似地，对关键词和子类进行处理，不断利用前一步得到的新索引列表，与查询要求的内容对应的索引列表取交集
+        // 最后，利用最后的索引列表，去查询对应的原始数据，查询其标题和摘要是否有 title_or_summary_query 中的内容
+        // 如果有，在新的索引列表中加入该数据对应的索引
+        if(authors_query.length === 0 && keywords_query.length === 0  && title_or_summary_query.length === 0 && (sub_category_query.length === 0 || (sub_category_query.length === 1 && sub_category_query[0] === now_sub_category))){
+            data[const_key.query_result_index_dict_key] = deep_clone(index_dict);
+            data[const_key.is_query_key] = sub_category_query.length === 1 ;
+        }else{
+            let query_result_index_dict = {};
+            const date_index_arr = data[const_key.date_index_arr_key];
+            const source_data = handlers[const_key.load_resource_key][const_key.data_key][now_main_category];
+            date_index_arr.forEach(date => {
+                let arrs = [];
+                arrs.push(index_dict[date]);
+                for(let author of authors_query){
+                    arrs.push(source_data[date][const_key.author_index_key][author] || []);
+                }
+                for(let keyword of keywords_query){
+                    arrs.push(source_data[date][const_key.keyword_index_key][keyword] || []);
+                }
+                for(let sub_category of sub_category_query){
+                    arrs.push(source_data[date][const_key.sub_category_index_dict_key][sub_category] || []);
+                }
+                let tmp_index = intersection(arrs);
+                if(tmp_index.length === 0){
+                    query_result_index_dict[date] = tmp_index;
+                }else{
+                    query_result_index_dict[date] = tmp_index.filter(index => {
+                        let item = source_data[date][const_key.source_data_key][index];
+                        return title_or_summary_query.some(query => item.title.includes(query) || item.summary.includes(query));
+                    });
+                }
+                
+            });
+            data[const_key.query_result_index_dict_key] = query_result_index_dict;
+            data[const_key.is_query_key] = true ;
+        }
     }
-    
     handlers[const_key.global_data_key][const_key.text_search_query_key] = null;
 }
 
 
-
 function render_result(handlers){
     let data = handlers[key][const_key.data_key];
+    let query_result_index_dict = data[const_key.query_result_index_dict_key];
+    const container = document.getElementById('paperContainer');
+    const now_main_category = data[const_key.main_category_key];
+    const source_data = handlers[const_key.load_resource_key][const_key.data_key][now_main_category];
+    container.innerHTML = '';
+    let current_view = handlers[const_key.global_data_key][const_key.current_view_key];
+    container.className = `paper-container ${current_view === 'list' ? 'list-view' : ''}`;
     let html = '';
-    data.forEach(item => {
-        html += `<div class="result-item">
-            <h3>${item.title}</h3>
-            <p>${item.abstract}</p>
-            <p>分类: ${item.main_category} ${item.sub_categories.join(', ')}</p>
-            <p>日期: ${item.date}</p>
-            <p>关键词: ${item.keywords.join(', ')}</p>
-            <p>作者: ${item.authors.join(', ')}</p>
-        </div>`;
-    });
-    document.getElementById('result-container').innerHTML = html;
+    let local_index = 1;
+    for(let date in query_result_index_dict){
+        let index_arr = query_result_index_dict[date];
+        if(index_arr.length === 0){
+            continue;
+        }
+        for(let index of index_arr){
+            let paper = source_data[date][const_key.source_data_key][index];
+            const paperCard = document.createElement('div');
+            // 添加匹配高亮类
+            paperCard.className = `paper-card ${paper.isMatched ? 'matched-paper' : ''}`;
+            paperCard.dataset.id = paper.id || paper.url;
+            
+            if (paper.isMatched) {
+                // 添加匹配原因提示
+                paperCard.title = `匹配: ${paper.matchReason.join(' | ')}`;
+            }
+            
+            const categoryTags = paper.allCategories ? 
+            paper.allCategories.map(cat => `<span class="category-tag">${cat}</span>`).join('') : 
+            `<span class="category-tag">${paper.category}</span>`;
+            
+            // 组合需要高亮的词：关键词 + 文本搜索
+            const titleSummaryTerms = [];
+            if (activeKeywords.length > 0) {
+                titleSummaryTerms.push(...activeKeywords);
+            }
+            if (textSearchQuery && textSearchQuery.trim().length > 0) {
+                titleSummaryTerms.push(textSearchQuery.trim());
+            }
+
+            // 高亮标题和摘要（关键词与文本搜索）
+            const highlightedTitle = titleSummaryTerms.length > 0 
+            ? highlightMatches(paper.title, titleSummaryTerms, 'keyword-highlight') 
+            : paper.title;
+            const highlightedSummary = titleSummaryTerms.length > 0 
+            ? highlightMatches(paper.summary, titleSummaryTerms, 'keyword-highlight') 
+            : paper.summary;
+
+            // 高亮作者（作者过滤 + 文本搜索）
+            const authorTerms = [];
+            if (activeAuthors.length > 0) authorTerms.push(...activeAuthors);
+            if (textSearchQuery && textSearchQuery.trim().length > 0) authorTerms.push(textSearchQuery.trim());
+            const highlightedAuthors = authorTerms.length > 0 
+            ? highlightMatches(paper.authors, authorTerms, 'author-highlight') 
+            : paper.authors;
+            
+            paperCard.innerHTML = `
+                <div class="paper-card-index">${local_index++}</div>
+                ${paper.isMatched ? '<div class="match-badge" title="匹配您的搜索条件"></div>' : ''}
+                <div class="paper-card-header">
+                    <h3 class="paper-card-title">${highlightedTitle}</h3>
+                    <p class="paper-card-authors">${highlightedAuthors}</p>
+                    <div class="paper-card-categories">
+                    ${categoryTags}
+                    </div>
+                </div>
+                <div class="paper-card-body">
+                    <p class="paper-card-summary">${highlightedSummary}</p>
+                    <div class="paper-card-footer">
+                    <span class="paper-card-date">${formatDate(paper.date)}</span>
+                    <span class="paper-card-link">Details</span>
+                    </div>
+                </div>
+            `;
+            
+            paperCard.addEventListener('click', () => {
+                currentPaperIndex = index; // 记录当前点击的论文索引
+                showPaperDetails(paper, index + 1);
+            });
+            
+            container.appendChild(paperCard);
+        }
+    }
+    if(local_index === 1){
+        container.innerHTML = `
+            <div class="loading-container">
+                <p>No paper found.</p>
+            </div>
+        `;
+    }
+    // container.innerHTML = html;
 }
 
 function range(n){

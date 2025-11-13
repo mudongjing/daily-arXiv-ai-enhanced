@@ -17,7 +17,8 @@ export function add_workers_with_data(handlers){
 
 function load_main_category(handlers){
     if(handlers[const_key.global_data_key][const_key.force_refresh_key]){
-        handlers[const_key.global_data_key][const_key.main_category_key] = localStorage.getItem(const_key.main_category_key) || '';
+        handlers[const_key.global_data_key][const_key.main_category_key] = localStorage.getItem(const_key.main_category_key) || const_key.info_source_key[0];
+        localStorage.setItem(const_key.main_category_key, handlers[const_key.global_data_key][const_key.main_category_key]);
     }
 }
 
@@ -72,6 +73,7 @@ async function load_info_data(handlers){
     let end_date = handlers[const_key.global_data_key][const_key.end_date_key];
     let delta = end_date ? time_utils.get_date_delta(current_date, end_date) : 0;
     let data = handlers[key][const_key.data_key];
+    handlers[const_key.global_data_key][const_key.is_fetch_complete_key] = false;
     for(let info_key of const_key.info_source_key){
         let info_data = data[info_key];
         if(!info_data){
@@ -88,7 +90,7 @@ async function load_info_data(handlers){
             let target_date = time_utils.add_days(current_date, i);
             let date_str = time_utils.format_date(target_date);
             if(!info_data[date_str]){
-                (source_data, author_index, category_index, keyword_index) = await read_info_file(info_key, date_str);
+                let [source_data, author_index, category_index, keyword_index] = await read_info_file(info_key, date_str,handlers);
                 info_data[date_str] = {
                     [const_key.source_data_key]: source_data,
                     [const_key.author_index_key]: author_index,
@@ -98,11 +100,12 @@ async function load_info_data(handlers){
             }
         }
     }
+    handlers[const_key.global_data_key][const_key.is_fetch_complete_key] = true;
 }
 
-async function read_info_file(info_key, date_str){
+async function read_info_file(info_key, date_str,handlers){
     let data_dir = handlers[const_key.global_data_key][const_key.info_data_dir_key];
-    let file_path = `${data_dir}/${date_str}_ai_${info_key}.jsonl`;
+    let file_path = `${data_dir}${info_key}_scrapy/${date_str}_ai_${info_key}.jsonl`;
     let source_data = [];
     let author_index = {};
     let category_index = {};
@@ -110,18 +113,18 @@ async function read_info_file(info_key, date_str){
     try {
         const response = await fetch(file_path);
         if (!response.ok) {
-            return (source_data, author_index, category_index, keyword_index);
+            return [source_data, author_index, category_index, keyword_index];
         }
         const text = await response.text();
         if (!text || text.trim() === '') {
-            return (source_data, author_index, category_index, keyword_index);
+            return [source_data, author_index, category_index, keyword_index];
         }
-        source_data, author_index, category_index, keyword_index = parseJsonlData(text);
+        [source_data, author_index, category_index, keyword_index] = parseJsonlData(text);
     } catch (error) {
         // console.error(`Error loading file ${file_path}:`, error);
-        return (source_data, author_index, category_index, keyword_index);
+        // return [source_data, author_index, category_index, keyword_index];
     }
-    return (source_data, author_index, category_index, keyword_index);
+    return [source_data, author_index, category_index, keyword_index];
 }
 
 function parseJsonlData(jsonlText) {
@@ -145,7 +148,7 @@ function parseJsonlData(jsonlText) {
     }
   });
   
-  return (source_data, author_index, category_index, keyword_index);
+  return [source_data, author_index, category_index, keyword_index];
 }
 
 function make_index(keys,map,index){

@@ -31,30 +31,58 @@ import * as const_key from './workers/const_key.js';
  * 也导致搜索时，当前页面无法给出完整的搜索结果，需要在后台利用完整数据进行匹配，匹配完成后，将匹配的索引值存储在'matched_index'中，用于后续的渲染
  */
 var handlers = {};// 利用流水线模式，对不同阶段执行对应的函数
-handlers['global_data'] = {
+handlers[const_key.global_data_key] = {
   [const_key.force_refresh_key]: true,
   [const_key.info_data_dir_key]: './info_data/',
+  [const_key.is_fetch_complete_key]: false,
+  [const_key.current_view_key]: 'grid',
 };
 
-handlers['init'] = {};
+handlers[const_key.init_key] = {};
 initer.add_workers_with_data(handlers);
-handlers['load_resource'] = {};
+handlers[const_key.load_resource_key] = {};
 loader.add_workers_with_data(handlers);
-handlers['render_result']= {};
+handlers[const_key.render_key] = {};
 renderer.add_workers_with_data(handlers);
 
-const handle_workers = function(worker_name){
+const handle_workers = async function(worker_name){
   var workers_with_data = handlers[worker_name];
   if(workers_with_data){
-    var workers = workers_with_data['workers'];
-    workers.forEach(worker => worker(handlers));
+    var workers = workers_with_data[const_key.workers_key];
+    for(let worker of workers){
+      if(isAsyncFunction(worker)){
+        await worker(handlers);
+      } else{
+        worker(handlers);
+      }
+    }
   }
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-  handle_workers('init');//初始化
-  fetcher.fetchGitHubStats();
-  handle_workers('load_resource');//加载资源
-  handle_workers('render_result');//渲染结果
+document.addEventListener('DOMContentLoaded', async () => {
+  handle_workers(const_key.init_key);//初始化
+  fetchGitHubStats();
+  await handle_workers(const_key.load_resource_key);//加载资源
+  handle_workers(const_key.render_key);//渲染结果
 });
+
+async function fetchGitHubStats() {
+  try {
+    const response = await fetch('https://api.github.com/repos/dw-dengwei/daily-arXiv-ai-enhanced');
+    const data = await response.json();
+    const starCount = data.stargazers_count;
+    const forkCount = data.forks_count;
+    
+    document.getElementById('starCount').textContent = starCount;
+    document.getElementById('forkCount').textContent = forkCount;
+  } catch (error) {
+    console.error('获取GitHub统计数据失败:', error);
+    document.getElementById('starCount').textContent = '?';
+    document.getElementById('forkCount').textContent = '?';
+  }
+}
+
+function isAsyncFunction(fn) {
+  return Object.prototype.toString.call(fn) === '[object AsyncFunction]';
+}
