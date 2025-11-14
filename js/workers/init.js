@@ -193,7 +193,7 @@ function init_search(handlers){
     // 输入时更新查询并重新渲染
     const handleInput = () => {
       const value = searchInput.value.trim();
-      textSearchQuery = value;
+      let textSearchQuery = value;
       // 有非空文本时：通过切换函数真正停用关键词/作者过滤，并记录之前状态
       if (textSearchQuery.length > 0) {
         if (previousActiveKeywords === null) {
@@ -480,7 +480,7 @@ function toggleDatePicker(handlers) {
   
   if (datePicker.classList.contains('active')) {
     document.body.style.overflow = 'hidden';
-    flatpickrInstance = handlers[global_data_key][const_key.flatpickrInstance_key];
+    let flatpickrInstance = handlers[global_data_key][const_key.flatpickrInstance_key];
     // 重新初始化日期选择器以确保它反映最新的可用日期
     if (flatpickrInstance) {
       flatpickrInstance.setDate(handlers[global_data_key][const_key.current_date_key], false);
@@ -496,4 +496,5 @@ function toggleRangeMode(handlers) {
   if (flatpickrInstance) {
     flatpickrInstance.set('mode', isRangeMode ? 'range' : 'single');
   }
+  handlers[global_data_key][const_key.is_range_mode_key] = isRangeMode;
 }

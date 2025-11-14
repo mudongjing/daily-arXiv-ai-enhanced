@@ -12,10 +12,13 @@ export function add_days(date, days){
 }
 
 export function format_date(date){
-    let year = date.getFullYear();
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    return `${year}-${month}-${day}`;
+    // let year = date.getFullYear();
+    // let month = date.getMonth() + 1;
+    // let day = date.getDate();
+    // return `${year}-${month}-${day}`;
+    return date.getFullYear() + "-" + 
+         String(date.getMonth() + 1).padStart(2, '0') + "-" + 
+         String(date.getDate()).padStart(2, '0');
 }
 
 export function get_date_delta(current_date, end_date){

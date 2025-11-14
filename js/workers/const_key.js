@@ -25,8 +25,9 @@ export const sub_category_key = 'sub_category'; // 后台指定过滤的次分�
 export const end_date_key = 'end_date'; // 如果不为null，则作为时间范围的结束日期，否则表示当前为单一日期查询
 export const force_refresh_key = 'force_refresh'; // 指定是否强制刷新数据
 export const info_data_dir_key = 'info_data_dir'; // 文章详情数据目录
-export const is_fetch_complete_key = 'is_fetch_complete'; // 是否完成数据获取
 export const current_view_key = 'current_view'; // 当前视图
+export const is_range_mode_key = 'is_range_mode'; // 是否为时间范围查询
+export const is_first_load_key = 'is_first_load'; // 是否为首次加载
 
 // 阶段名
 export const load_resource_key = 'load_resource'; 
@@ -43,3 +44,30 @@ export const author_index_key = 'author_index'; // 作者索引
 export const category_index_key = 'category_index'; // 分类索引
 export const keyword_index_key = 'keyword_index'; // 关键词索引
 
+export const  handlers = {};// 利用流水线模式，对不同阶段执行对应的函数
+export async function  handle_workers(worker_name){
+  var workers_with_data = handlers[worker_name];
+  if(workers_with_data){
+    var workers = workers_with_data[workers_key];
+    for(let worker of workers){
+      if(isAsyncFunction(worker)){
+        await worker(handlers);
+      } else{
+        worker(handlers);
+      }
+    }
+  }
+}
+
+export async function refresh_render(){
+  console.log('刷新渲染');
+  await handle_workers(load_resource_key);
+  console.log('加载资源完成');
+  console.log('渲染结果');
+  await handle_workers(render_key);
+  console.log('渲染完成');
+}
+
+function isAsyncFunction(fn) {
+  return Object.prototype.toString.call(fn) === '[object AsyncFunction]';
+}

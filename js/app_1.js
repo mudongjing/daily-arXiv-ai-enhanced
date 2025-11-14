@@ -30,41 +30,28 @@ import * as const_key from './workers/const_key.js';
  * 考虑到之后抓取新闻时，对应的数据量非常巨大，对内容的加载使用虚拟列表的方式，只加载当前可见区域的内容，避免一次性加载所有数据导致性能问题
  * 也导致搜索时，当前页面无法给出完整的搜索结果，需要在后台利用完整数据进行匹配，匹配完成后，将匹配的索引值存储在'matched_index'中，用于后续的渲染
  */
-var handlers = {};// 利用流水线模式，对不同阶段执行对应的函数
-handlers[const_key.global_data_key] = {
+const_key.handlers[const_key.global_data_key] = {
   [const_key.force_refresh_key]: true,
   [const_key.info_data_dir_key]: './info_data/',
   [const_key.is_fetch_complete_key]: false,
   [const_key.current_view_key]: 'grid',
+  [const_key.is_range_mode_key]: false,
+  [const_key.is_first_load_key]: true,
 };
 
-handlers[const_key.init_key] = {};
-initer.add_workers_with_data(handlers);
-handlers[const_key.load_resource_key] = {};
-loader.add_workers_with_data(handlers);
-handlers[const_key.render_key] = {};
-renderer.add_workers_with_data(handlers);
-
-const handle_workers = async function(worker_name){
-  var workers_with_data = handlers[worker_name];
-  if(workers_with_data){
-    var workers = workers_with_data[const_key.workers_key];
-    for(let worker of workers){
-      if(isAsyncFunction(worker)){
-        await worker(handlers);
-      } else{
-        worker(handlers);
-      }
-    }
-  }
-}
+const_key.handlers[const_key.init_key] = {};
+initer.add_workers_with_data(const_key.handlers);
+const_key.handlers[const_key.load_resource_key] = {};
+loader.add_workers_with_data(const_key.handlers);
+const_key.handlers[const_key.render_key] = {};
+renderer.add_workers_with_data(const_key.handlers);
 
 
 document.addEventListener('DOMContentLoaded', async () => {
-  handle_workers(const_key.init_key);//初始化
+  const_key.handle_workers(const_key.init_key);//初始化
   fetchGitHubStats();
-  await handle_workers(const_key.load_resource_key);//加载资源
-  handle_workers(const_key.render_key);//渲染结果
+  await const_key.handle_workers(const_key.load_resource_key);//加载资源
+  const_key.handle_workers(const_key.render_key);//渲染结果
 });
 
 async function fetchGitHubStats() {
@@ -83,6 +70,3 @@ async function fetchGitHubStats() {
   }
 }
 
-function isAsyncFunction(fn) {
-  return Object.prototype.toString.call(fn) === '[object AsyncFunction]';
-}

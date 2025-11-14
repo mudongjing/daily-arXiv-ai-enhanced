@@ -27,7 +27,7 @@ function load_sub_category(handlers){
     if(!handlers[const_key.global_data_key][const_key.force_refresh_key]){
         return;
     }
-    let sub_category = localStorage.getItem(const_key.sub_category_key);
+    let sub_category = localStorage.getItem(const_key.sub_category_key)||const_key.all_sign;
     let arr = [];
     if(sub_category){
         arr = sub_category.split(',');
@@ -36,12 +36,74 @@ function load_sub_category(handlers){
 }
 
 function load_date_range(handlers){
-    if(!handlers[const_key.global_data_key][const_key.force_refresh_key]){
+    if(!handlers[const_key.global_data_key][const_key.flatpickrInstance_key]){
+        const datepickerInput = document.getElementById('datepicker');
+        handlers[const_key.global_data_key][const_key.flatpickrInstance_key] = flatpickr(datepickerInput, {
+            inline: true,
+            dateFormat: "Y-m-d",
+            defaultDate: time_utils.get_current_date(),
+            enable: [
+            function(date) {
+                // 只启用有效日期
+                const dateStr = date.getFullYear() + "-" +
+                                String(date.getMonth() + 1).padStart(2, '0') + "-" +
+                                String(date.getDate()).padStart(2, '0');
+                // 在 availableDates[0] 之后的日期全部返回 false，否则返回 true
+                return dateStr <= time_utils.format_date(time_utils.get_current_date());
+            }
+            ],
+            onChange: function(selectedDates, dateStr) {
+                const isRangeMode = handlers[const_key.global_data_key][const_key.is_range_mode_key];
+                if (isRangeMode && selectedDates.length === 2) {
+                    // 处理日期范围选择
+                    // const startDate = time_utils.format_date(selectedDates[0]);
+                    // const endDate = time_utils.format_date(selectedDates[1]);
+                    handlers[const_key.global_data_key][const_key.current_date_key] = selectedDates[0];
+                    handlers[const_key.global_data_key][const_key.end_date_key] = selectedDates[1];
+                    // loadPapersByDateRange(startDate, endDate);
+                    // toggleDatePicker(handlers);
+                } else if (!isRangeMode && selectedDates.length === 1) {
+                    // 处理单个日期选择
+                    // const selectedDate = time_utils.format_date(selectedDates[0]);
+                    handlers[const_key.global_data_key][const_key.current_date_key] = selectedDates[0];
+                    handlers[const_key.global_data_key][const_key.end_date_key] = null;
+                    // if (availableDates.includes(selectedDate)) {
+                    // loadPapersByDate(selectedDate);
+                    // toggleDatePicker(handlers);
+                    // }
+                }
+                console.log('日期选择',selectedDates,handlers[const_key.global_data_key][const_key.current_date_key],handlers[const_key.global_data_key][const_key.end_date_key]);
+                handlers[const_key.global_data_key][const_key.force_refresh_key] = true;
+                const_key.refresh_render();
+                toggleDatePicker(handlers);
+            }
+        });
+    }
+    if(!handlers[const_key.global_data_key][const_key.force_refresh_key] || !handlers[const_key.global_data_key][const_key.is_first_load_key]){
         return;
     }
     let current_date = time_utils.get_current_date();
     handlers[const_key.global_data_key][const_key.current_date_key] = current_date;
     handlers[const_key.global_data_key][const_key.end_date_key] = null;
+    handlers[const_key.global_data_key][const_key.is_first_load_key] = false;
+}
+
+function toggleDatePicker(handlers) {
+  const datePicker = document.getElementById('datePickerModal');
+  datePicker.classList.toggle('active');
+  
+  if (datePicker.classList.contains('active')) {
+    document.body.style.overflow = 'hidden';
+    
+    // 重新初始化日期选择器以确保它反映最新的可用日期
+    const currentDate = handlers[const_key.global_data_key][const_key.current_date_key];
+    const flatpickrInstance = handlers[const_key.global_data_key][const_key.flatpickrInstance_key];
+    if (flatpickrInstance) {
+      flatpickrInstance.setDate(time_utils.format_date(currentDate), false);
+    }
+  } else {
+    document.body.style.overflow = '';
+  }
 }
 
 function load_authors(handlers){
@@ -73,7 +135,6 @@ async function load_info_data(handlers){
     let end_date = handlers[const_key.global_data_key][const_key.end_date_key];
     let delta = end_date ? time_utils.get_date_delta(current_date, end_date) : 0;
     let data = handlers[key][const_key.data_key];
-    handlers[const_key.global_data_key][const_key.is_fetch_complete_key] = false;
     for(let info_key of const_key.info_source_key){
         let info_data = data[info_key];
         if(!info_data){
@@ -81,7 +142,7 @@ async function load_info_data(handlers){
             info_data = data[info_key];
         }else{
             let date_keys = Object.keys(info_data);
-            let remove_keys = time_utils.remove_out_of_range_dates(date_keys, current_date, end_date);
+            let remove_keys = time_utils.select_dates_to_remove( current_date, end_date,date_keys);
             for(let key of remove_keys){
                 delete info_data[key];
             }
@@ -100,7 +161,7 @@ async function load_info_data(handlers){
             }
         }
     }
-    handlers[const_key.global_data_key][const_key.is_fetch_complete_key] = true;
+    console.log('加载数据',data);
 }
 
 async function read_info_file(info_key, date_str,handlers){
