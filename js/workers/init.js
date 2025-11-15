@@ -270,43 +270,6 @@ function init_search(handlers){
 }
 
 
-function togglePdfSize(button) {
-  const pdfContainer = button.closest('.pdf-preview-section').querySelector('.pdf-container');
-  const iframe = pdfContainer.querySelector('iframe');
-  const expandIcon = button.querySelector('.expand-icon');
-  const collapseIcon = button.querySelector('.collapse-icon');
-  
-  if (pdfContainer.classList.contains('expanded')) {
-    // 恢复正常大小
-    pdfContainer.classList.remove('expanded');
-    iframe.style.height = '800px';
-    expandIcon.style.display = 'block';
-    collapseIcon.style.display = 'none';
-    
-    // 移除遮罩层
-    const overlay = document.querySelector('.pdf-overlay');
-    if (overlay) {
-      overlay.remove();
-    }
-  } else {
-    // 放大显示
-    pdfContainer.classList.add('expanded');
-    iframe.style.height = '90vh';
-    expandIcon.style.display = 'none';
-    collapseIcon.style.display = 'block';
-    
-    // 添加遮罩层
-    const overlay = document.createElement('div');
-    overlay.className = 'pdf-overlay';
-    document.body.appendChild(overlay);
-    
-    // 点击遮罩层时收起PDF
-    overlay.addEventListener('click', () => {
-      togglePdfSize(button);
-    });
-  }
-}
-
 // 导航到上一篇论文
 function navigateToPreviousPaper(handlers) {
   let currentFilteredPapers = handlers[global_data_key][current_papers_key];
@@ -316,7 +279,7 @@ function navigateToPreviousPaper(handlers) {
   currentPaperIndex = currentPaperIndex > 0 ? currentPaperIndex - 1 : currentFilteredPapers.length - 1;
   handlers[global_data_key][current_paper_index_key] = currentPaperIndex;
   const paper = currentFilteredPapers[currentPaperIndex];
-  showPaperDetails(paper, currentPaperIndex + 1);
+  const_key.showPaperDetails(paper, currentPaperIndex + 1);
 }
 
 // 导航到下一篇论文
@@ -327,7 +290,7 @@ function navigateToNextPaper(handlers) {
   currentPaperIndex = currentPaperIndex < currentFilteredPapers.length - 1 ? currentPaperIndex + 1 : 0;
   handlers[global_data_key][current_paper_index_key] = currentPaperIndex;
   const paper = currentFilteredPapers[currentPaperIndex];
-  showPaperDetails(paper, currentPaperIndex + 1);
+  const_key.showPaperDetails(paper, currentPaperIndex + 1);
 }
 
 function closeModal() {
@@ -341,138 +304,7 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-function showPaperDetails(paper, paperIndex) {
-  const modal = document.getElementById('paperModal');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalBody = document.getElementById('modalBody');
-  const paperLink = document.getElementById('paperLink');
-  const pdfLink = document.getElementById('pdfLink');
-  const htmlLink = document.getElementById('htmlLink');
-  
-  // 重置模态框的滚动位置
-  modalBody.scrollTop = 0;
-  
-  // 组合高亮词：关键词 + 文本搜索
-  const modalTitleTerms = [];
-  
-  let activeAuthors = handlers[global_data_key][active_authors_key];
-  let textSearchQuery = handlers[global_data_key][text_search_query_key];
-  let activeKeywords = handlers[global_data_key][active_keywords_key];
-  let currentFilteredPapers = handlers[global_data_key][current_papers_key];
 
-  if (activeKeywords.length > 0) modalTitleTerms.push(...activeKeywords);
-  if (textSearchQuery && textSearchQuery.trim().length > 0) modalTitleTerms.push(textSearchQuery.trim());
-  // 高亮标题
-  const highlightedTitle = modalTitleTerms.length > 0 
-    ? highlightMatches(paper.title, modalTitleTerms, 'keyword-highlight') 
-    : paper.title;
-  
-  // 在标题前添加索引号
-  modalTitle.innerHTML = paperIndex ? `<span class="paper-index-badge">${paperIndex}</span> ${highlightedTitle}` : highlightedTitle;
-  
-  const abstractText = paper.details || '';
-  
-  const categoryDisplay = paper.allCategories ? 
-    paper.allCategories.join(', ') : 
-    paper.category;
-  
-  // 高亮作者（作者过滤 + 文本搜索）
-  const modalAuthorTerms = [];
-  if (activeAuthors.length > 0) modalAuthorTerms.push(...activeAuthors);
-  if (textSearchQuery && textSearchQuery.trim().length > 0) modalAuthorTerms.push(textSearchQuery.trim());
-  const highlightedAuthors = modalAuthorTerms.length > 0 
-    ? highlightMatches(paper.authors, modalAuthorTerms, 'author-highlight') 
-    : paper.authors;
-  
-  // 高亮摘要（关键词 + 文本搜索）
-  const highlightedSummary = modalTitleTerms.length > 0 
-    ? highlightMatches(paper.summary, modalTitleTerms, 'keyword-highlight') 
-    : paper.summary;
-  
-  // 高亮详情（Abstract/details）
-  const highlightedAbstract = modalTitleTerms.length > 0 
-    ? highlightMatches(abstractText, modalTitleTerms, 'keyword-highlight') 
-    : abstractText;
-  
-  // 高亮其他部分（如果存在且是摘要的一部分）
-  const highlightedMotivation = paper.motivation && modalTitleTerms.length > 0 
-    ? highlightMatches(paper.motivation, modalTitleTerms, 'keyword-highlight') 
-    : paper.motivation;
-  
-  const highlightedMethod = paper.method && modalTitleTerms.length > 0 
-    ? highlightMatches(paper.method, modalTitleTerms, 'keyword-highlight') 
-    : paper.method;
-  
-  const highlightedResult = paper.result && modalTitleTerms.length > 0 
-    ? highlightMatches(paper.result, modalTitleTerms, 'keyword-highlight') 
-    : paper.result;
-  
-  const highlightedConclusion = paper.conclusion && modalTitleTerms.length > 0 
-    ? highlightMatches(paper.conclusion, modalTitleTerms, 'keyword-highlight') 
-    : paper.conclusion;
-  
-  // 判断是否需要显示高亮说明
-  const showHighlightLegend = activeKeywords.length > 0 || activeAuthors.length > 0;
-  
-  // 添加匹配标记
-  const matchedPaperClass = paper.isMatched ? 'matched-paper-details' : '';
-  
-  const modalContent = `
-    <div class="paper-details ${matchedPaperClass}">
-      <p><strong>Authors: </strong>${highlightedAuthors}</p>
-      <p><strong>Categories: </strong>${categoryDisplay}</p>
-      <p><strong>Date: </strong>${formatDate(paper.date)}</p>
-      
-      
-      <h3>TL;DR</h3>
-      <p>${highlightedSummary}</p>
-      
-      <div class="paper-sections">
-        ${paper.motivation ? `<div class="paper-section"><h4>Motivation</h4><p>${highlightedMotivation}</p></div>` : ''}
-        ${paper.method ? `<div class="paper-section"><h4>Method</h4><p>${highlightedMethod}</p></div>` : ''}
-        ${paper.result ? `<div class="paper-section"><h4>Result</h4><p>${highlightedResult}</p></div>` : ''}
-        ${paper.conclusion ? `<div class="paper-section"><h4>Conclusion</h4><p>${highlightedConclusion}</p></div>` : ''}
-      </div>
-      
-      ${highlightedAbstract ? `<h3>Abstract</h3><p class="original-abstract">${highlightedAbstract}</p>` : ''}
-      
-      <div class="pdf-preview-section">
-        <div class="pdf-header">
-          <h3>PDF Preview</h3>
-          <button class="pdf-expand-btn" onclick="togglePdfSize(this)">
-            <svg class="expand-icon" viewBox="0 0 24 24" width="24" height="24">
-              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-            </svg>
-            <svg class="collapse-icon" viewBox="0 0 24 24" width="24" height="24" style="display: none;">
-              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-            </svg>
-          </button>
-        </div>
-        <div class="pdf-container">
-          <iframe src="${paper.url.replace('abs', 'pdf')}" width="100%" height="800px" frameborder="0"></iframe>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Update modal content
-  document.getElementById('modalBody').innerHTML = modalContent;
-  document.getElementById('paperLink').href = paper.url;
-  document.getElementById('pdfLink').href = paper.url.replace('abs', 'pdf');
-  document.getElementById('htmlLink').href = paper.url.replace('abs', 'html');
-  // 提示词来自：https://papers.cool/
-  prompt = `请你阅读这篇文章${paper.url.replace('abs', 'pdf')},总结一下这篇文章解决的问题、相关工作、研究方法、做了什么实验及其结果、结论，最后整体总结一下这篇文章的内容`
-  document.getElementById('kimiChatLink').href = `https://www.kimi.com/_prefill_chat?prefill_prompt=${prompt}&system_prompt=你是一个学术助手，后面的对话将围绕着以下论文内容进行，已经通过链接给出了论文的PDF和论文已有的FAQ。用户将继续向你咨询论文的相关问题，请你作出专业的回答，不要出现第一人称，当涉及到分点回答时，鼓励你以markdown格式输出。&send_immediately=true&force_search=true`;
-  
-  // 更新论文位置信息
-  const paperPosition = document.getElementById('paperPosition');
-  if (paperPosition && currentFilteredPapers.length > 0) {
-    paperPosition.textContent = `${currentPaperIndex + 1} / ${currentFilteredPapers.length}`;
-  }
-  
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
 
 function toggleDatePicker(handlers) {
   const datePicker = document.getElementById('datePickerModal');

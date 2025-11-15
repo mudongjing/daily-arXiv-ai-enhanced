@@ -464,6 +464,23 @@ header {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+.sub-category-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background-color: var(--background-hover);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  white-space: nowrap;
+  margin: 0 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
 .keyword-tag {
   display: inline-flex;
   align-items: center;
@@ -507,6 +524,12 @@ header {
 }
 
 .category-button.active {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.sub-category-button.active {
   background: var(--gradient-primary);
   color: white;
   box-shadow: var(--shadow-sm);
