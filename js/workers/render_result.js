@@ -146,6 +146,7 @@ function search_query(handlers){
     let query = handlers[const_key.global_data_key][const_key.text_search_query_key];
     const index_dict = data[const_key.authors_index_dict_key];
     const now_sub_category = data[const_key.sub_category_key];
+    const now_main_category = data[const_key.main_category_key];
     if (!query || query.trim() === ''){
         data[const_key.query_result_index_dict_key] = deep_clone(index_dict);
     } else{
@@ -231,8 +232,8 @@ function search_query(handlers){
 
 
 function render_result(handlers){
-    let data = handlers[key][const_key.data_key];
-    let query_result_index_dict = data[const_key.query_result_index_dict_key];
+    const data = handlers[key][const_key.data_key];
+    const query_result_index_dict = data[const_key.query_result_index_dict_key];
     const container = document.getElementById('paperContainer');
     const now_main_category = data[const_key.main_category_key];
     const source_data = handlers[const_key.load_resource_key][const_key.data_key][now_main_category];
@@ -240,15 +241,17 @@ function render_result(handlers){
     let current_view = handlers[const_key.global_data_key][const_key.current_view_key];
     container.className = `paper-container ${current_view === 'list' ? 'list-view' : ''}`;
     let is_matched = data[const_key.is_query_key];
-    let html = '';
-    let local_index = 1;
+
+    let local_index = 1; // 用于显示论文的本地序号
+    let date_index = 0; // 用于显示论文的日期序号
+    let paper_index_in_date = 0; // 用于显示论文在日期内的序号
     for(let date in query_result_index_dict){
         let index_arr = query_result_index_dict[date];
         if(index_arr.length === 0){
             continue;
         }
         for(let index of index_arr){
-            let paper = source_data[date][const_key.source_data_key][index];
+            const paper = source_data[date][const_key.source_data_key][index];
             const paperCard = document.createElement('div');
             // 添加匹配高亮类
             paperCard.className = `paper-card ${is_matched ? 'matched-paper' : ''}`;
@@ -263,7 +266,7 @@ function render_result(handlers){
             const highlightedAuthors = paper.authors;
             
             paperCard.innerHTML = `
-                <div class="paper-card-index">${local_index++}</div>
+                <div class="paper-card-index">${local_index}</div>
                 // ${paper.isMatched ? '<div class="match-badge" title="匹配您的搜索条件"></div>' : ''}
                 <div class="paper-card-header">
                     <h3 class="paper-card-title">${highlightedTitle}</h3>
@@ -280,14 +283,20 @@ function render_result(handlers){
                     </div>
                 </div>
             `;
+            let paper_wrapper = new const_key.PaperWrapper(paper,date_index,paper_index_in_date,local_index);
             
             paperCard.addEventListener('click', () => {
-                handlers[const_key.global_data_key][const_key.current_paper_index_key] = index; // 记录当前点击的论文索引
-                const_key.showPaperDetails(paper, index + 1);
+                handlers[const_key.global_data_key][const_key.current_paper_date_index_key] = paper_wrapper.date_index;
+                handlers[const_key.global_data_key][const_key.current_paper_index_key] = paper_wrapper.paper_index_in_date; // 记录当前点击的论文索引
+                handlers[const_key.global_data_key][const_key.paper_local_index_key] = paper_wrapper.local_index; // 记录当前点击的论文本地索引
+                const_key.showPaperDetails(paper_wrapper);
             });
             
             container.appendChild(paperCard);
+            paper_index_in_date = paper_index_in_date + 1;
+            local_index++;
         }
+        date_index = date_index+ 1;
     }
     if(local_index === 1){
         container.innerHTML = `

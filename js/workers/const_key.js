@@ -30,6 +30,9 @@ export const current_view_key = 'current_view'; // 当前视图
 export const is_range_mode_key = 'is_range_mode'; // 是否为时间范围查询
 export const is_first_load_key = 'is_first_load'; // 是否为首次加载
 export const local_sub_category_key = 'local_sub_category'; // 本地次分类
+export const paper_local_index_key = 'paper_local_index'; // 论文本地序号
+export const current_paper_date_index_key = 'current_paper_date_index'; // 当前在主分类下，当前选择的论文对应的日期索引
+
 
 // 阶段名
 export const load_resource_key = 'load_resource'; 
@@ -82,8 +85,10 @@ function isAsyncFunction(fn) {
 
 
 
-export function showPaperDetails(paper, paperIndex) {
+export function showPaperDetails(paper_wrapper) {
   let data = handlers[render_key][data_key];
+  let paper = paper_wrapper.paper;
+  let local_index = handlers[global_data_key][paper_local_index_key];
   let is_matched = data[is_query_key];
   let total_paper_num = data[total_paper_num_key];
   const modal = document.getElementById('paperModal');
@@ -99,7 +104,7 @@ export function showPaperDetails(paper, paperIndex) {
   const highlightedTitle = paper.title;
   
   // 在标题前添加索引号
-  modalTitle.innerHTML = paperIndex ? `<span class="paper-index-badge">${paperIndex}</span> ${highlightedTitle}` : highlightedTitle;
+  modalTitle.innerHTML = local_index ? `<span class="paper-index-badge">${local_index}</span> ${highlightedTitle}` : highlightedTitle;
   
   const abstractText = paper.summary || '';
   
@@ -161,7 +166,7 @@ export function showPaperDetails(paper, paperIndex) {
   // 更新论文位置信息
   const paperPosition = document.getElementById('paperPosition');
   if (paperPosition && total_paper_num > 0) {
-    paperPosition.textContent = `${handlers[global_data_key][current_paper_index_key] + 1} / ${total_paper_num}`;
+    paperPosition.textContent = `${local_index} / ${total_paper_num}`;
   }
   
   modal.classList.add('active');
@@ -183,4 +188,14 @@ export function is_arr_same(arr1,arr2){
         }
     }
     return true;
+}
+
+export class PaperWrapper{
+    constructor(paper,date_index,paper_index_in_date,local_index){
+        this.paper = paper;
+        this.date_index = date_index;
+        this.paper_index_in_date = paper_index_in_date;
+        this.local_index = local_index;
+    }
+
 }

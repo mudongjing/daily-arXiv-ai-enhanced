@@ -180,6 +180,8 @@ function init_search(handlers){
       e.preventDefault(); // 阻止默认换行行为
       // 触发搜索操作（这里可以添加实际的搜索逻辑）
       console.log('搜索:', searchInput.value);
+      handlers[global_data_key][text_search_query_key] = searchInput.value.trim();
+      const_key.render_current_view(null, null);
     }
   });
 
@@ -190,47 +192,18 @@ function init_search(handlers){
       searchInput.focus();
     });
 
-    // 输入时更新查询并重新渲染
+    // 输入时
     const handleInput = () => {
       const value = searchInput.value.trim();
       let textSearchQuery = value;
-      // 有非空文本时：通过切换函数真正停用关键词/作者过滤，并记录之前状态
-      if (textSearchQuery.length > 0) {
-        if (previousActiveKeywords === null) {
-          previousActiveKeywords = [...activeKeywords];
-        }
-        if (previousActiveAuthors === null) {
-          previousActiveAuthors = [...activeAuthors];
-        }
-        // 逐个停用当前激活的关键词/作者
-        // 注意：在遍历前复制数组，避免在切换过程中修改原数组导致遍历问题
-        const keywordsToDisable = [...activeKeywords];
-        const authorsToDisable = [...activeAuthors];
-        keywordsToDisable.forEach(k => toggleKeywordFilter(k));
-        authorsToDisable.forEach(a => toggleAuthorFilter(a));
-      } else {
-        // 文本删除为空，恢复之前记录的关键词/作者激活状态
-        if (previousActiveKeywords && previousActiveKeywords.length > 0) {
-          previousActiveKeywords.forEach(k => {
-            // 若当前未激活则切换回激活
-            if (!activeKeywords.includes(k)) toggleKeywordFilter(k);
-          });
-        }
-        if (previousActiveAuthors && previousActiveAuthors.length > 0) {
-          previousActiveAuthors.forEach(a => {
-            if (!activeAuthors.includes(a)) toggleAuthorFilter(a);
-          });
-        }
-        previousActiveKeywords = null;
-        previousActiveAuthors = null;
+      if (textSearchQuery.length === 0) {
         // 文本为空时自动隐藏输入框
         searchWrapper.style.display = 'none';
+        handlers[const_key.render_key][const_key.data_key][const_key.is_query_key] = false;
+        const_key.render_current_view(null, null);
       }
-
       // 控制清除按钮显示
       searchClear.style.display = textSearchQuery.length > 0 ? 'inline-flex' : 'none';
-
-      renderPapers();
     };
 
     searchInput.addEventListener('input', handleInput);
@@ -239,22 +212,10 @@ function init_search(handlers){
     searchClear.addEventListener('click', (e) => {
       e.stopPropagation();
       searchInput.value = '';
-      textSearchQuery = '';
       searchClear.style.display = 'none';
-      // 恢复之前的过滤状态（如有）
-      if (previousActiveKeywords && previousActiveKeywords.length > 0) {
-        previousActiveKeywords.forEach(k => {
-          if (!activeKeywords.includes(k)) toggleKeywordFilter(k);
-        });
-      }
-      if (previousActiveAuthors && previousActiveAuthors.length > 0) {
-        previousActiveAuthors.forEach(a => {
-          if (!activeAuthors.includes(a)) toggleAuthorFilter(a);
-        });
-      }
-      previousActiveKeywords = null;
-      previousActiveAuthors = null;
-      renderPapers();
+      handlers[global_data_key][text_search_query_key] =null;
+      handlers[const_key.render_key][const_key.data_key][const_key.is_query_key] = false;
+      const_key.render_current_view(null, null);
       // 清空后隐藏输入框
       searchWrapper.style.display = 'none';
     });
@@ -272,25 +233,97 @@ function init_search(handlers){
 
 // 导航到上一篇论文
 function navigateToPreviousPaper(handlers) {
-  let currentFilteredPapers = handlers[global_data_key][current_papers_key];
-  if (currentFilteredPapers.length === 0) return;
+  const data = handlers[const_key.render_key][const_key.data_key];
+  const now_main_category = data[const_key.main_category_key];
+  const query_result_index_dict = data[const_key.query_result_index_dict_key];
+  const source_data = handlers[const_key.load_resource_key][const_key.data_key][now_main_category];
 
-  let currentPaperIndex = handlers[global_data_key][current_paper_index_key];
-  currentPaperIndex = currentPaperIndex > 0 ? currentPaperIndex - 1 : currentFilteredPapers.length - 1;
-  handlers[global_data_key][current_paper_index_key] = currentPaperIndex;
-  const paper = currentFilteredPapers[currentPaperIndex];
-  const_key.showPaperDetails(paper, currentPaperIndex + 1);
+  let local_index = handlers[global_data_key][const_key.paper_local_index_key];
+  let date_index = handlers[global_data_key][const_key.current_paper_date_index_key];;
+  let paper_index_in_date = handlers[global_data_key][const_key.current_paper_index_key];
+
+  let total_paper_num = data[const_key.total_paper_num_key];
+  let date_arr = Object.keys(query_result_index_dict);
+  if(local_index - 1 ===0){
+    handlers[global_data_key][const_key.current_paper_date_index_key] = date_arr.length-1;
+    let paper_index_arr = query_result_index_dict[date_arr[date_arr.length-1]];
+    handlers[global_data_key][const_key.current_paper_index_key] = paper_index_arr.length-1;
+    handlers[global_data_key][const_key.paper_local_index_key] = total_paper_num;
+
+    const paper = source_data[date_arr[date_arr.length-1]][const_key.source_data_key][paper_index_arr[paper_index_arr.length-1]];
+    const paper_wrapper = new const_key.PaperWrapper(paper, date_arr.length-1, paper_index_arr.length-1, total_paper_num);
+    const_key.showPaperDetails(paper_wrapper);
+  }else{
+    handlers[global_data_key][const_key.paper_local_index_key] = local_index - 1;
+    if(paper_index_in_date === 0){
+      date_index -= 1;
+      let paper_index_arr = query_result_index_dict[date_arr[date_index]];
+      paper_index_in_date = paper_index_arr.length-1;
+
+      handlers[global_data_key][const_key.current_paper_date_index_key] = date_index;
+      handlers[global_data_key][const_key.current_paper_index_key] = paper_index_in_date;
+
+      const paper = source_data[date_arr[date_index]][const_key.source_data_key][paper_index_arr[paper_index_in_date]];
+      const paper_wrapper = new const_key.PaperWrapper(paper, date_index, paper_index_in_date, local_index-1);
+      const_key.showPaperDetails(paper_wrapper);
+    }else{
+      paper_index_in_date -= 1;
+
+      handlers[global_data_key][const_key.current_paper_index_key] = paper_index_in_date;
+
+      let paper_index_arr = query_result_index_dict[date_arr[date_index]];
+      const paper = source_data[date_arr[date_index]][const_key.source_data_key][paper_index_arr[paper_index_in_date]];
+      const paper_wrapper = new const_key.PaperWrapper(paper, date_index, paper_index_in_date, local_index-1);
+      const_key.showPaperDetails(paper_wrapper);
+    }
+  }
 }
 
 // 导航到下一篇论文
 function navigateToNextPaper(handlers) {
-  let currentFilteredPapers = handlers[global_data_key][current_papers_key];
-  if (currentFilteredPapers.length === 0) return;
-  let currentPaperIndex = handlers[global_data_key][current_paper_index_key];
-  currentPaperIndex = currentPaperIndex < currentFilteredPapers.length - 1 ? currentPaperIndex + 1 : 0;
-  handlers[global_data_key][current_paper_index_key] = currentPaperIndex;
-  const paper = currentFilteredPapers[currentPaperIndex];
-  const_key.showPaperDetails(paper, currentPaperIndex + 1);
+  const data = handlers[const_key.render_key][const_key.data_key];
+  const now_main_category = data[const_key.main_category_key];
+  const query_result_index_dict = data[const_key.query_result_index_dict_key];
+  const source_data = handlers[const_key.load_resource_key][const_key.data_key][now_main_category];
+
+  let local_index = handlers[global_data_key][const_key.paper_local_index_key];
+  let date_index = handlers[global_data_key][const_key.current_paper_date_index_key];;
+  let paper_index_in_date = handlers[global_data_key][const_key.current_paper_index_key];
+  let total_paper_num = data[const_key.total_paper_num_key];
+  let date_arr = Object.keys(query_result_index_dict);
+  if(local_index === total_paper_num){
+    handlers[global_data_key][const_key.current_paper_date_index_key] = 0;
+    handlers[global_data_key][const_key.current_paper_index_key] = 0;
+    handlers[global_data_key][const_key.paper_local_index_key] = 1;
+
+    let paper_index_arr = query_result_index_dict[date_arr[0]];
+    const paper = source_data[date_arr[0]][const_key.source_data_key][paper_index_arr[0]];
+    const paper_wrapper = new const_key.PaperWrapper(paper, 0, 0, 1);
+    const_key.showPaperDetails(paper_wrapper);
+  }else{
+    handlers[global_data_key][const_key.paper_local_index_key] = local_index + 1;
+    let paper_index_arr = query_result_index_dict[date_arr[date_index]];
+    if(paper_index_in_date === paper_index_arr.length-1){
+      date_index += 1;
+      paper_index_in_date = 0;
+
+      handlers[global_data_key][const_key.current_paper_date_index_key] = date_index;
+      handlers[global_data_key][const_key.current_paper_index_key] = paper_index_in_date;
+
+      paper_index_arr = query_result_index_dict[date_arr[date_index]];
+      const paper = source_data[date_arr[date_index]][const_key.source_data_key][paper_index_arr[paper_index_in_date]];
+      const paper_wrapper = new const_key.PaperWrapper(paper, date_index, paper_index_in_date, local_index+1);
+      const_key.showPaperDetails(paper_wrapper); 
+    }else{
+      paper_index_in_date += 1;
+
+      handlers[global_data_key][const_key.current_paper_index_key] = paper_index_in_date;
+      
+      const paper = source_data[date_arr[date_index]][const_key.source_data_key][paper_index_arr[paper_index_in_date]];
+      const paper_wrapper = new const_key.PaperWrapper(paper, date_index, paper_index_in_date, local_index+1);
+      const_key.showPaperDetails(paper_wrapper); 
+    }
+  }
 }
 
 function closeModal() {
