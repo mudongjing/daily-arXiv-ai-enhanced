@@ -33,6 +33,10 @@ export const local_sub_category_key = 'local_sub_category'; // 本地次分类
 export const paper_local_index_key = 'paper_local_index'; // 论文本地序号
 export const current_paper_date_index_key = 'current_paper_date_index'; // 当前在主分类下，当前选择的论文对应的日期索引
 
+export const title_or_summary_query_key = 'title_or_summary_query'; // 标题或摘要格式化查询
+export const authors_query_key = 'authors_query'; // 作者格式化查询
+export const keywords_query_key = 'keywords_query'; // 关键词格式化查询
+export const sub_category_query_key = 'sub_category_query'; // 次分类格式化查询
 
 // 阶段名
 export const load_resource_key = 'load_resource'; 
@@ -101,24 +105,21 @@ export function showPaperDetails(paper_wrapper) {
   // 重置模态框的滚动位置
   modalBody.scrollTop = 0;
   // 高亮标题
-  const highlightedTitle = paper.title;
+  const highlightedTitle = is_matched ? highlightMatches(paper.title, handlers[global_data_key][title_or_summary_query_key],'keyword-highlight') : paper.title;
   
   // 在标题前添加索引号
   modalTitle.innerHTML = local_index ? `<span class="paper-index-badge">${local_index}</span> ${highlightedTitle}` : highlightedTitle;
-  
-  const abstractText = paper.summary || '';
-  
-  const categoryDisplay = paper.categories ? 
-    paper.categories.join(', ') : 
-    '';
-  
-  const highlightedAuthors =  paper.authors;
-  
-  // 高亮摘要（关键词 + 文本搜索）
-  const highlightedSummary =  paper.summary;
-  
+  const sub_category_query = handlers[global_data_key][sub_category_query_key];
+  const keywords_query = handlers[global_data_key][keywords_query_key];
+  const categoryDisplay = is_matched && sub_category_query.length > 0 ? paper.categories.map(cat => 
+                            sub_category_query.includes(cat)?  `<span class="category-tag keyword-highlight">${cat}</span>`:`<span class="category-tag">${cat}</span>`).join('') 
+                    :paper.categories.map(cat => `<span class="category-tag">${cat}</span>`).join('') ;
+  const keywordsDisplay = is_matched && keywords_query.length > 0 ? paper.keywords.map(keyword => 
+                            keywords_query.includes(keyword)?  `<span class="keywords-tag keyword-highlight">${keyword}</span>`:`<span class="keywords-tag">${keyword}</span>`).join('') 
+                    :paper.keywords.map(keyword => `<span class="keywords-tag">${keyword}</span>`).join('') ;
+  const highlightedAuthors =  is_matched ? highlightWithIn(paper.authors, handlers[global_data_key][authors_query_key],'author-highlight') : paper.authors.join(', ');
   // 高亮详情（Abstract/details）
-  const highlightedAbstract = abstractText;
+  const highlightedAbstract = is_matched ? highlightMatches(paper.summary, handlers[global_data_key][title_or_summary_query_key],'keyword-highlight') : paper.summary;
   
   // 添加匹配标记
   const matchedPaperClass = is_matched ? 'matched-paper-details' : '';
@@ -130,7 +131,7 @@ export function showPaperDetails(paper_wrapper) {
       <p><strong>Date: </strong>${paper.submitted_date}</p>
       
       <div class="paper-sections">
-        ${paper.keywords ? `<div class="paper-section"><h4>Keywords</h4><p>${paper.keywords}</p></div>` : ''}
+        ${paper.keywords ? `<div class="paper-section"><h4>Keywords</h4><p>${keywordsDisplay}</p></div>` : ''}
       </div>
       
       ${highlightedAbstract ? `<h3>Abstract</h3><p class="original-abstract">${highlightedAbstract}</p>` : ''}
@@ -198,4 +199,35 @@ export class PaperWrapper{
         this.local_index = local_index;
     }
 
+}
+
+// 帮助函数：高亮文本中的匹配内容
+export function highlightMatches(text, terms, className = 'highlight-match') {
+  if (!terms || terms.length === 0 || !text) {
+    return text;
+  }
+  let result = text;
+  // 按照长度排序关键词，从长到短，避免短词先替换导致长词匹配失败
+  const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+  // 为每个词创建一个正则表达式，使用 'gi' 标志进行全局、不区分大小写的匹配
+  sortedTerms.forEach(term => {
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+    result = result.replace(regex, `<span class="${className}">$1</span>`);
+  });
+  return result;
+}
+
+export function highlightWithIn(arr,terms,className = 'highlight-match'){
+    if(!terms || terms.length === 0){
+        return arr.join(', ');
+    }
+    let res = [];
+    for(let item of arr){
+        if(terms.includes(item)){
+            res.push(`<span class="${className}">${item}</span>`);
+        }else{
+            res.push(item);
+        }
+    }
+    return res.join(', ');
 }

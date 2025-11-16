@@ -155,6 +155,10 @@ function search_query(handlers){
         let authors_query = [];
         let keywords_query = [];
         let sub_category_query = [];
+        handlers[const_key.global_data_key][const_key.title_or_summary_query_key] = title_or_summary_query;
+        handlers[const_key.global_data_key][const_key.authors_query_key] = authors_query;
+        handlers[const_key.global_data_key][const_key.keywords_query_key] = keywords_query;
+        handlers[const_key.global_data_key][const_key.sub_category_query_key] = sub_category_query;
         for(let query_part of query_parts){
             query_part = query_part.trim();
             if(query_part === ''){
@@ -231,6 +235,7 @@ function search_query(handlers){
 }
 
 
+
 function render_result(handlers){
     const data = handlers[key][const_key.data_key];
     const query_result_index_dict = data[const_key.query_result_index_dict_key];
@@ -245,6 +250,8 @@ function render_result(handlers){
     let local_index = 1; // 用于显示论文的本地序号
     let date_index = 0; // 用于显示论文的日期序号
     let paper_index_in_date = 0; // 用于显示论文在日期内的序号
+    
+    const sub_category_query = handlers[const_key.global_data_key][const_key.sub_category_query_key];
     for(let date in query_result_index_dict){
         let index_arr = query_result_index_dict[date];
         if(index_arr.length === 0){
@@ -257,13 +264,14 @@ function render_result(handlers){
             paperCard.className = `paper-card ${is_matched ? 'matched-paper' : ''}`;
             paperCard.dataset.id = paper.id || paper.url;
             
-            const categoryTags = paper.categories.map(cat => `<span class="category-tag">${cat}</span>`).join('');
+            const categoryTags = is_matched && sub_category_query.length > 0 ? paper.categories.map(cat => 
+                            sub_category_query.includes(cat)?  `<span class="category-tag keyword-highlight">${cat}</span>`:`<span class="category-tag">${cat}</span>`).join('') 
+                    :paper.categories.map(cat => `<span class="category-tag">${cat}</span>`).join('') ;
 
             // // 高亮标题和摘要（关键词与文本搜索）
-            const highlightedTitle =  paper.title;
-            const highlightedSummary =  paper.summary;
-
-            const highlightedAuthors = paper.authors;
+            const highlightedTitle =  is_matched ? const_key.highlightMatches(paper.title, handlers[const_key.global_data_key][const_key.title_or_summary_query_key],'keyword-highlight') : paper.title;
+            const highlightedSummary =  is_matched ? const_key.highlightMatches(paper.summary, handlers[const_key.global_data_key][const_key.title_or_summary_query_key],'keyword-highlight') : paper.summary;
+            const highlightedAuthors = is_matched ? const_key.highlightWithIn(paper.authors, handlers[const_key.global_data_key][const_key.authors_query_key],'author-highlight') : paper.authors.join(', ');
             
             paperCard.innerHTML = `
                 <div class="paper-card-index">${local_index}</div>
@@ -306,7 +314,7 @@ function render_result(handlers){
         `;
     }
     handlers[const_key.global_data_key][const_key.force_refresh_key] = false;
-    // container.innerHTML = html;
+    
 }
 
 

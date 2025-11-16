@@ -179,7 +179,6 @@ function init_search(handlers){
     if (e.key === 'Enter') {
       e.preventDefault(); // 阻止默认换行行为
       // 触发搜索操作（这里可以添加实际的搜索逻辑）
-      console.log('搜索:', searchInput.value);
       handlers[global_data_key][text_search_query_key] = searchInput.value.trim();
       const_key.render_current_view(null, null);
     }
@@ -218,6 +217,11 @@ function init_search(handlers){
       const_key.render_current_view(null, null);
       // 清空后隐藏输入框
       searchWrapper.style.display = 'none';
+      // 清空格式化查询命令
+      handlers[const_key.global_data_key][const_key.title_or_summary_query_key] = null;
+      handlers[const_key.global_data_key][const_key.authors_query_key] = null;
+      handlers[const_key.global_data_key][const_key.keywords_query_key] = null;
+      handlers[const_key.global_data_key][const_key.sub_category_query_key] = null;
     });
 
     // 失焦时：若文本为空则隐藏输入框（保持有文本时不隐藏）
